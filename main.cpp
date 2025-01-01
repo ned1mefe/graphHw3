@@ -303,6 +303,7 @@ void initShaders()
         glUniform3fv(eyePosLoc[i], 1, glm::value_ptr(eyePos));
         glUniform3fv(lightPosLoc[i], 1, glm::value_ptr(lightPos));
         glUniform3fv(kdLoc[i], 1, glm::value_ptr(kdCubes));
+        glUniform1i(glGetUniformLocation(gProgram[i], "isGroundCube"), 0);
 	}
 }
 
@@ -404,34 +405,106 @@ void init()
     initFonts(gWidth, gHeight);
 }
 
-void drawCube()
+void drawCubes()
 {
-	glUseProgram(gProgram[0]);
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-}
+    glUseProgram(gProgram[0]); // Use the cube shader program
 
-void drawCubeEdges()
-{
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+            for (int k = 0; k < 3; ++k)
+            {
+                // Compute the modeling matrix
+                glm::mat4 modelingMatrix = glm::mat4(1.0f);
+                modelingMatrix = glm::translate(modelingMatrix, glm::vec3(-1.0f + i, -1.0f + j, -1.0f + k));
+
+                // Update the modeling matrix uniform for the cube shader
+                glUniformMatrix4fv(modelingMatrixLoc[0], 1, GL_FALSE, glm::value_ptr(modelingMatrix));
+
+                // Draw the cube
+                glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+            }
+
+    // Draw the outlines
+    glUseProgram(gProgram[1]); // Use the outline shader program
     glLineWidth(3);
 
-	glUseProgram(gProgram[1]);
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+            for (int k = 0; k < 3; ++k)
+            {
+                // Compute the modeling matrix (reuse same logic)
+                glm::mat4 modelingMatrix = glm::mat4(1.0f);
+                modelingMatrix = glm::translate(modelingMatrix, glm::vec3(-1.0f + i, -1.0f + j, -1.0f + k));
 
-    for (int i = 0; i < 6; ++i)
-    {
-	    glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT, BUFFER_OFFSET(gTriangleIndexDataSizeInBytes + i * 4 * sizeof(GLuint)));
-    }
+                // Update the modeling matrix uniform for the outline shader
+                glUniformMatrix4fv(modelingMatrixLoc[1], 1, GL_FALSE, glm::value_ptr(modelingMatrix));
+
+                // Draw the outlines (6 faces of the cube)
+                for (int face = 0; face < 6; ++face)
+                {
+                    glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT,
+                        BUFFER_OFFSET(gTriangleIndexDataSizeInBytes + face * 4 * sizeof(GLuint)));
+                }
+            }
 }
+
+void drawGround()
+{
+    glUseProgram(gProgram[0]); // Use the cube shader program
+    glUniform1i(glGetUniformLocation(gProgram[0], "isGroundCube"), 1);
+
+    for (int i = 0; i < 9; ++i)
+        for (int j = 0; j < 9; ++j)
+            {
+                // Compute the modeling matrix
+                glm::mat4 modelingMatrix = glm::mat4(1.0f);
+                modelingMatrix = glm::translate(modelingMatrix, glm::vec3(-4.5f + i, -7.5, -4.0f + j));
+                modelingMatrix = glm::scale(modelingMatrix, glm::vec3(1,0.5,1));
+
+                // Update the modeling matrix uniform for the cube shader
+                glUniformMatrix4fv(modelingMatrixLoc[0], 1, GL_FALSE, glm::value_ptr(modelingMatrix));
+
+                // Draw the cube
+                glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+            }
+    glUniform1i(glGetUniformLocation(gProgram[0], "isGroundCube"), 0);
+
+    // Draw the outlines
+    glUseProgram(gProgram[1]); // Use the outline shader program
+    glLineWidth(3);
+
+    
+    for (int i = 0; i < 9; ++i)
+        for (int j = 0; j < 9; ++j)
+            {
+                // Compute the modeling matrix (reuse same logic)
+                glm::mat4 modelingMatrix = glm::mat4(1.0f);
+                modelingMatrix = glm::translate(modelingMatrix, glm::vec3(-4.5f + i, -7.5, -4.0f + j));
+                modelingMatrix = glm::scale(modelingMatrix, glm::vec3(1,0.5,1));
+                // Update the modeling matrix uniform for the outline shader
+                glUniformMatrix4fv(modelingMatrixLoc[1], 1, GL_FALSE, glm::value_ptr(modelingMatrix));
+
+                // Draw the outlines (6 faces of the cube)
+                for (int face = 0; face < 6; ++face)
+                {
+                    glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT,
+                        BUFFER_OFFSET(gTriangleIndexDataSizeInBytes + face * 4 * sizeof(GLuint)));
+                }
+            }
+}
+
+
 
 void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color)
 {
-    // Activate corresponding render state	
+    // Activate corresponding render state
     glUseProgram(gProgram[2]);
     glUniform3f(glGetUniformLocation(gProgram[2], "textColor"), color.x, color.y, color.z);
     glActiveTexture(GL_TEXTURE0);
 
     // Iterate through all characters
     std::string::const_iterator c;
-    for (c = text.begin(); c != text.end(); c++) 
+    for (c = text.begin(); c != text.end(); c++)
     {
         Character ch = Characters[*c];
 
@@ -443,13 +516,13 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
 
         // Update VBO for each character
         GLfloat vertices[6][4] = {
-            { xpos,     ypos + h,   0.0, 0.0 },            
+            { xpos,     ypos + h,   0.0, 0.0 },
             { xpos,     ypos,       0.0, 1.0 },
             { xpos + w, ypos,       1.0, 1.0 },
 
             { xpos,     ypos + h,   0.0, 0.0 },
             { xpos + w, ypos,       1.0, 1.0 },
-            { xpos + w, ypos + h,   1.0, 0.0 }           
+            { xpos + w, ypos + h,   1.0, 0.0 }
         };
 
         // Render glyph texture over quad
@@ -479,11 +552,21 @@ void display()
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    drawCube();
-    drawCubeEdges();
-    renderText("tetrisGL", gWidth/2 - 55, gHeight/2 - 60, 0.75, glm::vec3(1, 1, 0));
+    drawCubes();
+    drawGround();
+    //drawCubeEdges();
 
-    assert(glGetError() == GL_NO_ERROR);
+    /* Should not be hardcoded */
+    renderText("Front", 3, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
+    renderText("Points: 0000", gWidth - 200, gHeight-30, 0.75, glm::vec3(1, 1, 0));
+
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR)
+    {
+        std::cout << "OpenGL Error: " << error << std::endl;
+    }
+
+    assert(error == GL_NO_ERROR);
 }
 
 void reshape(GLFWwindow* window, int w, int h)

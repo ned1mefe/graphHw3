@@ -15,6 +15,8 @@ uniform vec3 lightPos;
 uniform vec3 eyePos;
 uniform vec3 kd;
 
+uniform int isGroundCube; 
+
 in vec4 fragWorldPos;
 flat in vec3 fragWorldNor;
 
@@ -33,8 +35,10 @@ void main(void)
 
 	float NdotL = dot(N, L); // for diffuse component
 	float NdotH = dot(N, H); // for specular component
-
-	vec3 diffuseColor = I * kd * max(0, NdotL);
+	
+	vec3 kdColor = (isGroundCube == 1) ? vec3(0.334, 0.288, 0.635) : kd;
+	
+	vec3 diffuseColor = I * kdColor * max(0, NdotL);
 	vec3 specularColor = I * ks * pow(max(0, NdotH), 100);
 	vec3 ambientColor = Iamb * ka;
 

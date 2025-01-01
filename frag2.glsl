@@ -11,10 +11,11 @@ vec3 Iamb = vec3(0.1, 0.1, 0.1); // ambient light intensity
 //vec3 kd = vec3(0.86, 0.11, 0.31);     // diffuse reflectance coefficient
 vec3 ka = vec3(0.1, 0.1, 0.1);   // ambient reflectance coefficient
 vec3 ks = vec3(0.5, 0.5, 0.5);   // specular reflectance coefficient
-
 uniform vec3 lightPos;
 uniform vec3 eyePos;
 uniform vec3 kd;
+
+uniform int isGroundCube; 
 
 in vec4 fragWorldPos;
 flat in vec3 fragWorldNor;

@@ -50,7 +50,10 @@ GLint kdLoc[2];
 
 glm::mat4 projectionMatrix;
 glm::mat4 viewingMatrix;
-glm::mat4 modelingMatrix = glm::translate(glm::mat4(1.f), glm::vec3(-0.5, -0.5, -0.5));
+
+// represents the (0,0,0) coordinate for cubes (far left corner since objects get closer when z increase)
+glm::mat4 modelingMatrix = glm::translate(glm::mat4(1.f), glm::vec3(-4.5, -7, -4)); 
+
 glm::vec3 eyePos = glm::vec3(0, 0, 24);
 glm::vec3 lightPos = glm::vec3(0, 0, 7);
 
@@ -58,6 +61,11 @@ glm::vec3 lightPos = glm::vec3(0, 0, 7);
 glm::vec3 kdCubes(0.86, 0.11, 0.31);
 
 int activeProgramIndex = 0;
+
+vector<glm::vec3> allCubes;
+int totalCubeCount = 0; //also stores the activeCube's start index in allCubes
+void createNewCube();
+
 
 // Holds all state information relevant to a character as loaded using FreeType
 struct Character {
@@ -70,9 +78,7 @@ struct Character {
 std::map<GLchar, Character> Characters;
 
 // For reading GLSL files
-bool ReadDataFromFile(
-    const string& fileName, ///< [in]  Name of the shader file
-    string&       data)     ///< [out] The contents of the file
+bool ReadDataFromFile(const string& fileName,string& data)     ///< [out] The contents of the file
 {
     fstream myfile;
 
@@ -403,49 +409,48 @@ void init()
     initShaders();
     initVBO();
     initFonts(gWidth, gHeight);
+
+    createNewCube(); //game starts with a cube that already exists
 }
 
 void drawCubes()
 {
     glUseProgram(gProgram[0]); // Use the cube shader program
 
-    for (int i = 0; i < 3; ++i)
-        for (int j = 0; j < 3; ++j)
-            for (int k = 0; k < 3; ++k)
-            {
-                // Compute the modeling matrix
-                glm::mat4 modelingMatrix = glm::mat4(1.0f);
-                modelingMatrix = glm::translate(modelingMatrix, glm::vec3(-1.0f + i, -1.0f + j, -1.0f + k));
+    for (glm::vec3 cubeCoords : allCubes)
+    {
+        // Compute the modeling matrix
+        glm::mat4 modelMatrix = modelingMatrix;
+        modelMatrix = glm::translate(modelMatrix, cubeCoords);
 
-                // Update the modeling matrix uniform for the cube shader
-                glUniformMatrix4fv(modelingMatrixLoc[0], 1, GL_FALSE, glm::value_ptr(modelingMatrix));
+        // Update the modeling matrix uniform for the cube shader
+        glUniformMatrix4fv(modelingMatrixLoc[0], 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-                // Draw the cube
-                glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-            }
+        // Draw the cube
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    }
 
     // Draw the outlines
     glUseProgram(gProgram[1]); // Use the outline shader program
     glLineWidth(3);
 
-    for (int i = 0; i < 3; ++i)
-        for (int j = 0; j < 3; ++j)
-            for (int k = 0; k < 3; ++k)
-            {
-                // Compute the modeling matrix (reuse same logic)
-                glm::mat4 modelingMatrix = glm::mat4(1.0f);
-                modelingMatrix = glm::translate(modelingMatrix, glm::vec3(-1.0f + i, -1.0f + j, -1.0f + k));
 
-                // Update the modeling matrix uniform for the outline shader
-                glUniformMatrix4fv(modelingMatrixLoc[1], 1, GL_FALSE, glm::value_ptr(modelingMatrix));
+    for (glm::vec3 cubeCoords : allCubes)
+    {
+        // Compute the modeling matrix (reuse same logic)
+        glm::mat4 modelMatrix = modelingMatrix;
+        modelMatrix = glm::translate(modelMatrix, cubeCoords);
 
-                // Draw the outlines (6 faces of the cube)
-                for (int face = 0; face < 6; ++face)
-                {
-                    glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT,
-                        BUFFER_OFFSET(gTriangleIndexDataSizeInBytes + face * 4 * sizeof(GLuint)));
-                }
-            }
+        // Update the modeling matrix uniform for the outline shader
+        glUniformMatrix4fv(modelingMatrixLoc[1], 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+        // Draw the outlines (6 faces of the cube)
+        for (int face = 0; face < 6; ++face)
+        {
+            glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT,
+                BUFFER_OFFSET(gTriangleIndexDataSizeInBytes + face * 4 * sizeof(GLuint)));
+        }
+    }
 }
 
 void drawGround()
@@ -544,6 +549,35 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void createNewCube()
+{
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+            for (int k = 0; k < 3; ++k)
+                allCubes.push_back({ 3+i,12+j,3+k });
+}
+
+void activeCubeMoveRight()
+{
+    if (allCubes[totalCubeCount].x >= 6)
+        return;
+
+    for (int i = 0; i < 27; i++)
+    {
+        allCubes[totalCubeCount + i].x++;
+    }
+}
+
+void activeCubeMoveLeft()
+{
+    if (allCubes[totalCubeCount].x <= 0)
+        return;
+
+    for (int i = 0; i < 27; i++)
+    {
+        allCubes[totalCubeCount + i].x--;
+    }
+}
 
 void display()
 {
@@ -554,7 +588,6 @@ void display()
 
     drawCubes();
     drawGround();
-    //drawCubeEdges();
 
     /* Should not be hardcoded */
     renderText("Front", 3, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
@@ -600,6 +633,14 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
     if ((key == GLFW_KEY_Q || key == GLFW_KEY_ESCAPE) && action == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+    if ((key == GLFW_KEY_D) && action == GLFW_PRESS)
+    {
+        activeCubeMoveRight();
+    }
+    if ((key == GLFW_KEY_A) && action == GLFW_PRESS)
+    {
+        activeCubeMoveLeft();
     }
 }
 

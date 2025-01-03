@@ -22,7 +22,7 @@
 #include "GameState.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
-#define GLEW_STATIC
+//#define GLEW_STATIC
 #include <GL/glew.h>
 //#include <OpenGL/gl3.h>   // The GL Header File
 #include <GLFW/glfw3.h> // The GLFW header
@@ -178,7 +178,8 @@ void initFonts(int windowWidth, int windowHeight)
 
     // Load font as face
     FT_Face face;
-    if (FT_New_Face(ft, "C:\\Windows\\Fonts\\arial.ttf", 0, &face))
+    //if (FT_New_Face(ft, "C:\\Windows\\Fonts\\arial.ttf", 0, &face))
+    if (FT_New_Face(ft, "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", 0, &face))
     //if (FT_New_Face(ft, "/usr/share/fonts/truetype/gentium-basic/GenBkBasR.ttf", 0, &face)) // you can use different fonts
     {
         std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;

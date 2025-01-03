@@ -19,8 +19,10 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include "GameState.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#define GLEW_STATIC
 #include <GL/glew.h>
 //#include <OpenGL/gl3.h>   // The GL Header File
 #include <GLFW/glfw3.h> // The GLFW header
@@ -62,9 +64,7 @@ glm::vec3 kdCubes(0.86, 0.11, 0.31);
 
 int activeProgramIndex = 0;
 
-vector<glm::vec3> allCubes;
-int totalCubeCount = 0; //also stores the activeCube's start index in allCubes
-void createNewCube();
+GameState gameState;
 
 
 // Holds all state information relevant to a character as loaded using FreeType
@@ -178,7 +178,7 @@ void initFonts(int windowWidth, int windowHeight)
 
     // Load font as face
     FT_Face face;
-    if (FT_New_Face(ft, "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", 0, &face))
+    if (FT_New_Face(ft, "C:\\Windows\\Fonts\\arial.ttf", 0, &face))
     //if (FT_New_Face(ft, "/usr/share/fonts/truetype/gentium-basic/GenBkBasR.ttf", 0, &face)) // you can use different fonts
     {
         std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
@@ -410,48 +410,56 @@ void init()
     initVBO();
     initFonts(gWidth, gHeight);
 
-    createNewCube(); //game starts with a cube that already exists
 }
 
-void drawCubes()
+void drawCube(const glm::vec3& position)
+{
+    glm::mat4 modelMatrix = modelingMatrix;
+    modelMatrix = glm::translate(modelMatrix, position);
+    glUniformMatrix4fv(modelingMatrixLoc[0], 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+}
+
+void drawOutline(const glm::vec3& position)
+{
+    glm::mat4 modelMatrix = modelingMatrix;
+    modelMatrix = glm::translate(modelMatrix, position);
+
+    // Update the modeling matrix uniform for the outline shader
+    glUniformMatrix4fv(modelingMatrixLoc[1], 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+    // Draw the outlines (6 faces of the cube)
+    for (int face = 0; face < 6; ++face)
+    {
+        glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT,
+            BUFFER_OFFSET(gTriangleIndexDataSizeInBytes + face * 4 * sizeof(GLuint)));
+    }
+}
+
+void drawAllCubes()
 {
     glUseProgram(gProgram[0]); // Use the cube shader program
 
-    for (glm::vec3 cubeCoords : allCubes)
-    {
-        // Compute the modeling matrix
-        glm::mat4 modelMatrix = modelingMatrix;
-        modelMatrix = glm::translate(modelMatrix, cubeCoords);
-
-        // Update the modeling matrix uniform for the cube shader
-        glUniformMatrix4fv(modelingMatrixLoc[0], 1, GL_FALSE, glm::value_ptr(modelMatrix));
-
-        // Draw the cube
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    for (const auto& block : gameState.activeBlock) {
+        drawCube(glm::vec3(block.x, block.y, block.z));
     }
-
-    // Draw the outlines
-    glUseProgram(gProgram[1]); // Use the outline shader program
-    glLineWidth(3);
-
-
-    for (glm::vec3 cubeCoords : allCubes)
-    {
-        // Compute the modeling matrix (reuse same logic)
-        glm::mat4 modelMatrix = modelingMatrix;
-        modelMatrix = glm::translate(modelMatrix, cubeCoords);
-
-        // Update the modeling matrix uniform for the outline shader
-        glUniformMatrix4fv(modelingMatrixLoc[1], 1, GL_FALSE, glm::value_ptr(modelMatrix));
-
-        // Draw the outlines (6 faces of the cube)
-        for (int face = 0; face < 6; ++face)
-        {
-            glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT,
-                BUFFER_OFFSET(gTriangleIndexDataSizeInBytes + face * 4 * sizeof(GLuint)));
-        }
+    for (const auto& block : gameState.blocks) {
+        drawCube(glm::vec3(block.x, block.y, block.z));
     }
 }
+
+void drawAllOutlines()
+{
+    glUseProgram(gProgram[1]); // Use the cube shader program
+
+    for (const auto& block : gameState.activeBlock) {
+        drawOutline(glm::vec3(block.x, block.y, block.z));
+    }
+    for (const auto& block : gameState.blocks) {
+        drawOutline(glm::vec3(block.x, block.y, block.z));
+    }
+}
+
 
 void drawGround()
 {
@@ -549,35 +557,6 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void createNewCube()
-{
-    for (int i = 0; i < 3; ++i)
-        for (int j = 0; j < 3; ++j)
-            for (int k = 0; k < 3; ++k)
-                allCubes.push_back({ 3+i,12+j,3+k });
-}
-
-void activeCubeMoveRight()
-{
-    if (allCubes[totalCubeCount].x >= 6)
-        return;
-
-    for (int i = 0; i < 27; i++)
-    {
-        allCubes[totalCubeCount + i].x++;
-    }
-}
-
-void activeCubeMoveLeft()
-{
-    if (allCubes[totalCubeCount].x <= 0)
-        return;
-
-    for (int i = 0; i < 27; i++)
-    {
-        allCubes[totalCubeCount + i].x--;
-    }
-}
 
 void display()
 {
@@ -586,8 +565,9 @@ void display()
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    drawCubes();
+    drawAllCubes();
     drawGround();
+    drawAllOutlines();
 
     /* Should not be hardcoded */
     renderText("Front", 3, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
@@ -630,17 +610,32 @@ void reshape(GLFWwindow* window, int w, int h)
 
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if ((key == GLFW_KEY_Q || key == GLFW_KEY_ESCAPE) && action == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if ((key == GLFW_KEY_D) && action == GLFW_PRESS)
-    {
-        activeCubeMoveRight();
-    }
-    if ((key == GLFW_KEY_A) && action == GLFW_PRESS)
-    {
-        activeCubeMoveLeft();
+    if (action != GLFW_PRESS)
+        return;
+    
+    switch (key) {
+        case GLFW_KEY_ESCAPE:
+        case GLFW_KEY_Q:
+            glfwSetWindowShouldClose(window, GL_TRUE);
+            break;
+        case GLFW_KEY_A:
+            gameState.moveBlock(-1);
+            break;
+        case GLFW_KEY_D:
+            gameState.moveBlock(1);
+            break;
+        case GLFW_KEY_W:
+            gameState.updateFallSpeed(-0.2f);
+            break;
+        case GLFW_KEY_S:
+            gameState.updateFallSpeed(0.2f);
+            break;
+        case GLFW_KEY_H:
+            gameState.rotateView(-90.0f);
+            break;
+        case GLFW_KEY_K:
+            gameState.rotateView(90.0f);
+            break;
     }
 }
 

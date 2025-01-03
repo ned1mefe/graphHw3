@@ -3,7 +3,7 @@
 #include <random>
 #include <map>
 #include <cmath>
-#define M_PI acos(-1)
+//#define M_PI acos(-1)
 
 const float GameState::INITIAL_FALL_SPEED = 1.0f;
 const float GameState::MIN_FALL_SPEED = 0.5f;

@@ -9,6 +9,14 @@ struct Block {
     bool active;
 };
 
+enum Direction
+{
+    Front = 0,
+    Right = 1,
+    Back = 2,
+    Left = 3
+};
+
 class GameState {
 public:
     GameState();
@@ -18,7 +26,7 @@ public:
     float lastFallTime;
     int score;
     bool gameOver;
-    float viewRotation;
+    Direction facedDirection;
 
     // Block management
     std::vector<Block> blocks;
@@ -31,7 +39,7 @@ public:
     bool checkBoundariesCollision();
     void moveBlock(int direction); // -1 left, 1 right
     void updateFallSpeed(float delta);
-    void rotateView(float angle);
+    void rotateView(int direction); // -1 left, 1 right
     void checkLineCompletion();
 
     // Constants

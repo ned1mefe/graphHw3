@@ -461,7 +461,6 @@ void drawAllOutlines()
     }
 }
 
-
 void drawGround()
 {
     glUseProgram(gProgram[0]); // Use the cube shader program
@@ -506,8 +505,6 @@ void drawGround()
                 }
             }
 }
-
-
 
 void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color)
 {
@@ -558,7 +555,6 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-
 void display()
 {
     glClearColor(0, 0, 0, 1);
@@ -570,8 +566,27 @@ void display()
     drawGround();
     drawAllOutlines();
 
-    /* Should not be hardcoded */
-    renderText("Front", 3, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
+    string facedDirection;
+    switch (gameState.facedDirection)
+    {
+    case Front:
+        facedDirection = "Front";
+        break;
+    case Right:
+        facedDirection = "Right";
+        break;
+    case Back:
+        facedDirection = "Back";
+        break;
+    case Left:
+        facedDirection = "Left";
+        break;
+    default:
+        facedDirection = "";
+        break;
+    }
+    
+    renderText(facedDirection, 3, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
     renderText("Points: 0000", gWidth - 200, gHeight-30, 0.75, glm::vec3(1, 1, 0));
 
     GLenum error = glGetError();
@@ -626,24 +641,27 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
             gameState.moveBlock(1);
             break;
         case GLFW_KEY_W:
-            gameState.updateFallSpeed(-0.2f);
+            gameState.updateFallSpeed(-0.4f);
             break;
         case GLFW_KEY_S:
-            gameState.updateFallSpeed(0.2f);
+            gameState.updateFallSpeed(0.4f);
             break;
         case GLFW_KEY_H:
-            gameState.rotateView(-90.0f);
+            gameState.rotateView(-1);
             break;
         case GLFW_KEY_K:
-            gameState.rotateView(90.0f);
+            gameState.rotateView(1);
             break;
     }
 }
 
 void mainLoop(GLFWwindow* window)
 {
+    static float currentTime = 0.0f;
     while (!glfwWindowShouldClose(window))
     {
+        currentTime += 0.01f;
+        gameState.updateBlockPosition(currentTime);
         display();
         glfwSwapBuffers(window);
         glfwPollEvents();

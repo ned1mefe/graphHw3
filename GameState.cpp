@@ -5,25 +5,26 @@
 #include <cmath>
 //#define M_PI acos(-1)
 
-const float GameState::INITIAL_FALL_SPEED = 1.0f;
-const float GameState::MIN_FALL_SPEED = 0.5f;
-const float GameState::MAX_FALL_SPEED = 3.0f;
+const float GameState::INITIAL_FALL_SPEED = 0.0f;
+const float GameState::MIN_FALL_SPEED = 0.0f;
+const float GameState::MAX_FALL_SPEED = 2.8f;
 
 GameState::GameState() :
     fallSpeed(INITIAL_FALL_SPEED),
     lastFallTime(0.0f),
     score(0),
     gameOver(false),
-    viewRotation(0.0f) {
+    facedDirection(Front) {
     createNewBlock();
 }
 
 void GameState::createNewBlock() {
     activeBlock.clear();
+    fallSpeed = INITIAL_FALL_SPEED;
 
     for (int x = 3; x < 6; x++) {
         for (int y = 12; y < 15; y++) {
-            for (int z = 3; z <= 6; z++) {
+            for (int z = 3; z < 6; z++) {
                 Block block = {
                     static_cast<float>(x),
                     static_cast<float>(y),
@@ -124,7 +125,9 @@ void GameState::updateFallSpeed(float delta) {
     fallSpeed = newFallSpeed;
 }
 
-void GameState::rotateView(float angle) {
+void GameState::rotateView(int direction) {
+
+    facedDirection = Direction((facedDirection + 4 + direction) % 4); // -1 % 4 returns -1 in cpp so add a 4
 
     //TAMAMEN YANLIÞ KÜPLERÝ DÖNDÜRMEMÝZ GEREKIYOR BAKIÞ ACISINI DEÐÝL
 

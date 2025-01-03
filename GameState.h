@@ -6,7 +6,6 @@
 
 struct Block {
     float x, y, z;
-    bool active;
 };
 
 enum Direction

@@ -18,6 +18,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <iomanip>
 #include <map>
 #include "GameState.h"
 #define _USE_MATH_DEFINES
@@ -567,6 +568,10 @@ void display()
     drawAllOutlines();
 
     string facedDirection;
+    std::stringstream ss;
+    ss << "Points: " << std::setw(4) << std::setfill('0') << gameState.score;
+    std::string points = ss.str();
+
     switch (gameState.facedDirection)
     {
     case Front:
@@ -587,7 +592,7 @@ void display()
     }
     
     renderText(facedDirection, 3, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
-    renderText("Points: 0000", gWidth - 200, gHeight-30, 0.75, glm::vec3(1, 1, 0));
+    renderText(points, gWidth - 200, gHeight-30, 0.75, glm::vec3(1, 1, 0));
 
     GLenum error = glGetError();
     if (error != GL_NO_ERROR)

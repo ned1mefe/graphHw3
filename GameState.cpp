@@ -29,7 +29,6 @@ void GameState::createNewBlock() {
                     static_cast<float>(x),
                     static_cast<float>(y),
                     static_cast<float>(z),
-                    true
                 };
                 activeBlock.push_back(block);
             }

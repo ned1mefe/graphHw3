@@ -152,9 +152,8 @@ void GameState::rotateView(int direction) {
 
     //TAMAMEN YANLIÞ KÜPLERÝ DÖNDÜRMEMÝZ GEREKIYOR BAKIÞ ACISINI DEÐÝL
 
-    /*viewRotation += angle;
-    while (viewRotation >= 360.0f) viewRotation -= 360.0f;
-    while (viewRotation < 0.0f) viewRotation += 360.0f;*/
+    targetAngle += direction * 90.0f;
+    rotating = true; //enter rotating state
 }
 
 void GameState::checkLineCompletion() {

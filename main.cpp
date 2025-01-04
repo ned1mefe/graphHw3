@@ -638,9 +638,14 @@ void display()
         facedDirection = "";
         break;
     }
-    
+
     renderText(facedDirection, 3, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
-    renderText(points, gWidth - 200, gHeight-30, 0.75, glm::vec3(1, 1, 0));
+    renderText(points, gWidth - 200, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
+
+    if (gameState.gameOver) {
+        renderText("Game Over", gWidth / 2 - 100, gHeight / 2, 1.0, glm::vec3(1, 0, 0));
+        renderText(points, gWidth / 2 - 100, gHeight / 2 - 50, 1.0, glm::vec3(1, 1, 0));
+    }
 
     GLenum error = glGetError();
     if (error != GL_NO_ERROR)
@@ -650,6 +655,7 @@ void display()
 
     assert(error == GL_NO_ERROR);
 }
+
 
 void reshape(GLFWwindow* window, int w, int h)
 {

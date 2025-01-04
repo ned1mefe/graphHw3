@@ -404,14 +404,13 @@ void init()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
-    // polygon offset is used to prevent z-fighting between the cube and its borders
-    glPolygonOffset(0.5, 0.5);
+    // Adjust polygon offset values to prevent z-fighting
+    glPolygonOffset(1.0, 1.0);
     glEnable(GL_POLYGON_OFFSET_FILL);
 
     initShaders();
     initVBO();
     initFonts(gWidth, gHeight);
-
 }
 
 void drawCube(const glm::vec3& position)
@@ -452,6 +451,7 @@ void drawAllCubes()
 
 void drawAllOutlines()
 {
+    glDisable(GL_POLYGON_OFFSET_FILL); // Disable polygon offset for edges
     glUseProgram(gProgram[1]); // Use the cube shader program
 
     for (const auto& block : gameState.activeBlock) {
@@ -460,6 +460,7 @@ void drawAllOutlines()
     for (const auto& block : gameState.blocks) {
         drawOutline(glm::vec3(block.x, block.y, block.z));
     }
+    glEnable(GL_POLYGON_OFFSET_FILL); // Re-enable polygon offset for faces
 }
 
 void drawGround()

@@ -55,7 +55,7 @@ glm::mat4 projectionMatrix;
 glm::mat4 viewingMatrix;
 
 // represents the (0,0,0) coordinate for cubes (far left corner since objects get closer when z increase)
-glm::mat4 modelingMatrix = glm::translate(glm::mat4(1.f), glm::vec3(-4.5, -7, -4)); 
+glm::mat4 modelingMatrix = glm::translate(glm::mat4(1.f), glm::vec3(-4.5, -7, -4.5)); 
 
 glm::vec3 eyePos = glm::vec3(0, 0, 24);
 glm::vec3 lightPos = glm::vec3(0, 0, 7);
@@ -472,7 +472,7 @@ void drawGround()
             {
                 // Compute the modeling matrix
                 glm::mat4 modelingMatrix = glm::mat4(1.0f);
-                modelingMatrix = glm::translate(modelingMatrix, glm::vec3(-4.5f + i, -7.5, -4.0f + j));
+                modelingMatrix = glm::translate(modelingMatrix, glm::vec3(-4.5f + i, -7.5, -4.5f + j));
                 modelingMatrix = glm::scale(modelingMatrix, glm::vec3(1,0.5,1));
 
                 // Update the modeling matrix uniform for the cube shader
@@ -493,7 +493,7 @@ void drawGround()
             {
                 // Compute the modeling matrix (reuse same logic)
                 glm::mat4 modelingMatrix = glm::mat4(1.0f);
-                modelingMatrix = glm::translate(modelingMatrix, glm::vec3(-4.5f + i, -7.5, -4.0f + j));
+                modelingMatrix = glm::translate(modelingMatrix, glm::vec3(-4.5f + i, -7.5, -4.5f + j));
                 modelingMatrix = glm::scale(modelingMatrix, glm::vec3(1,0.5,1));
                 // Update the modeling matrix uniform for the outline shader
                 glUniformMatrix4fv(modelingMatrixLoc[1], 1, GL_FALSE, glm::value_ptr(modelingMatrix));
@@ -554,6 +554,53 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void changeCameraAngle()
+{
+    float degreeChange = (gameState.targetAngle - gameState.currentAngle > 0) ? gameState.rotationSpeed : -gameState.rotationSpeed;
+    float radians = glm::radians(degreeChange);
+
+    float cosAngle = cos(radians);
+    float sinAngle = sin(radians);
+
+    eyePos = glm::vec3(
+        cosAngle * eyePos.x + sinAngle * eyePos.z,
+        eyePos.y,
+        -sinAngle * eyePos.x + cosAngle * eyePos.z
+    );
+
+    lightPos = glm::vec3(
+        cosAngle * lightPos.x + sinAngle * lightPos.z,
+        lightPos.y,
+        -sinAngle * lightPos.x + cosAngle * lightPos.z
+    );
+
+
+    // Update the view matrix
+    viewingMatrix = glm::lookAt(eyePos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+
+    // Update rotation state
+    if (fabs(degreeChange) >= fabs(gameState.targetAngle - gameState.currentAngle))
+    {
+        gameState.currentAngle = gameState.targetAngle; // Snap to target angle
+        gameState.rotating = false;
+    }
+    else {
+        gameState.currentAngle += degreeChange; // Increment angle
+    }
+
+    // Update uniforms for Program 0
+    glUseProgram(gProgram[0]);
+    glUniform3fv(eyePosLoc[0], 1, glm::value_ptr(eyePos));
+    glUniform3fv(lightPosLoc[0], 1, glm::value_ptr(lightPos));
+    glUniformMatrix4fv(viewingMatrixLoc[0], 1, GL_FALSE, glm::value_ptr(viewingMatrix));
+
+    // Update uniforms for Program 1
+    glUseProgram(gProgram[1]);
+    glUniform3fv(eyePosLoc[1], 1, glm::value_ptr(eyePos));
+    glUniform3fv(lightPosLoc[1], 1, glm::value_ptr(lightPos));
+    glUniformMatrix4fv(viewingMatrixLoc[1], 1, GL_FALSE, glm::value_ptr(viewingMatrix));
 }
 
 void display()
@@ -667,6 +714,10 @@ void mainLoop(GLFWwindow* window)
     {
         currentTime += 0.01f;
         gameState.updateBlockPosition(currentTime);
+        
+        if (gameState.rotating)
+            changeCameraAngle();
+
         display();
         glfwSwapBuffers(window);
         glfwPollEvents();

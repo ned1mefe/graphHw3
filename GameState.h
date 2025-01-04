@@ -27,6 +27,11 @@ public:
     bool gameOver;
     Direction facedDirection;
 
+    bool rotating;
+    float currentAngle;
+    float targetAngle;
+    float rotationSpeed; 
+
     // Block management
     std::vector<Block> blocks;
     std::vector<Block> activeBlock;

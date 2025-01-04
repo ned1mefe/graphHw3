@@ -14,11 +14,22 @@ GameState::GameState() :
     lastFallTime(0.0f),
     score(0),
     gameOver(false),
-    facedDirection(Front) {
-    createNewBlock();
+    facedDirection(Front),
+    rotating(false),
+    currentAngle(0.0f),
+    targetAngle(0.0f),
+    rotationSpeed(3.0f)
+{
+    createNewBlock(); //game starts with an active block
 }
 
 void GameState::createNewBlock() {
+
+    if (gameOver)
+    {
+        return;
+    }
+
     activeBlock.clear();
     fallSpeed = INITIAL_FALL_SPEED;
 
@@ -37,6 +48,7 @@ void GameState::createNewBlock() {
 
     if (checkCollision()) {
         gameOver = true;
+        activeBlock.clear();
     }
 }
 
@@ -94,15 +106,25 @@ bool GameState::checkCollision() {
 
 void GameState::moveBlock(int direction) {
 
-    //sadece bakis acisini degistirdigimiz icin x i guncellememiz yeterli
+    if (rotating)
+        return;
+
+    float dx = 0.0f, dz = 0.0f;
+
+    // Apply view rotation to movement
+    float radian = targetAngle * M_PI / 180.0f;
+    dx = direction * cos(radian);
+    dz = -direction * sin(radian);
 
     for (auto& block : activeBlock) {
-        block.x += direction;
+        block.x += dx;
+        block.z += dz;
     }
 
     if (checkCollision() || checkBoundariesCollision()) {
         for (auto& block : activeBlock) {
-            block.x -= direction;
+            block.x -= dx;
+            block.z -= dz;
         }
     }
 }

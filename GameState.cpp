@@ -56,13 +56,13 @@ void GameState::updateBlockPosition(float currentTime) {
     if (currentTime - lastFallTime >= 1.0f / fallSpeed) {
         // Move block down
         for (auto& block : activeBlock) {
-            block.y -= 1.0f;
+            block.y = round(block.y - 1.0f);
         }
 
         if (checkCollision()) {
             // Move block back up
             for (auto& block : activeBlock) {
-                block.y += 1.0f;
+                block.y = round(block.y + 1.0f);
             }
             // Add to placed blocks
             blocks.insert(blocks.end(), activeBlock.begin(), activeBlock.end());
@@ -117,14 +117,14 @@ void GameState::moveBlock(int direction) {
     dz = -direction * sin(radian);
 
     for (auto& block : activeBlock) {
-        block.x += dx;
-        block.z += dz;
+        block.x = round(block.x + dx);
+        block.z = round(block.z + dz);
     }
 
     if (checkCollision() || checkBoundariesCollision()) {
         for (auto& block : activeBlock) {
-            block.x -= dx;
-            block.z -= dz;
+            block.x = round(block.x - dx);
+            block.z = round(block.z - dz);
         }
     }
 }
@@ -151,6 +151,19 @@ void GameState::rotateView(int direction) {
     facedDirection = Direction((facedDirection + 4 + direction) % 4); // -1 % 4 returns -1 in cpp so add a 4
     targetAngle += direction * 90.0f;
     rotating = true; //enter rotating state
+
+    if (targetAngle > 360 && currentAngle > 360)
+    {
+        targetAngle -= 360.0f;
+        currentAngle -= 360.0f;
+    }
+
+    if (targetAngle < 360 && currentAngle < 360)
+    {
+        targetAngle += 360.0f;
+        currentAngle += 360.0f;
+    }
+
 }
 
 void GameState::checkLineCompletion() {

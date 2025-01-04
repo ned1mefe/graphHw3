@@ -611,40 +611,42 @@ void display()
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    drawAllCubes();
-    drawGround();
-    drawAllOutlines();
-
-    string facedDirection;
-    std::stringstream ss;
-    ss << "Points: " << std::setw(4) << std::setfill('0') << gameState.score;
-    std::string points = ss.str();
-
-    switch (gameState.facedDirection)
-    {
-    case Front:
-        facedDirection = "Front";
-        break;
-    case Right:
-        facedDirection = "Right";
-        break;
-    case Back:
-        facedDirection = "Back";
-        break;
-    case Left:
-        facedDirection = "Left";
-        break;
-    default:
-        facedDirection = "";
-        break;
-    }
-
-    renderText(facedDirection, 3, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
-    renderText(points, gWidth - 200, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
-
     if (gameState.gameOver) {
         renderText("Game Over", gWidth / 2 - 100, gHeight / 2, 1.0, glm::vec3(1, 0, 0));
-        renderText(points, gWidth / 2 - 100, gHeight / 2 - 50, 1.0, glm::vec3(1, 1, 0));
+        std::stringstream ss;
+        ss << "Points: " << std::setw(4) << std::setfill('0') << gameState.score;
+        renderText(ss.str(), gWidth / 2 - 100, gHeight / 2 - 50, 1.0, glm::vec3(1, 1, 0));
+    } else {
+        drawAllCubes();
+        drawGround();
+        drawAllOutlines();
+
+        string facedDirection;
+        std::stringstream ss;
+        ss << "Points: " << std::setw(4) << std::setfill('0') << gameState.score;
+        std::string points = ss.str();
+
+        switch (gameState.facedDirection)
+        {
+        case Front:
+            facedDirection = "Front";
+            break;
+        case Right:
+            facedDirection = "Right";
+            break;
+        case Back:
+            facedDirection = "Back";
+            break;
+        case Left:
+            facedDirection = "Left";
+            break;
+        default:
+            facedDirection = "";
+            break;
+        }
+
+        renderText(facedDirection, 3, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
+        renderText(points, gWidth - 200, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
     }
 
     GLenum error = glGetError();

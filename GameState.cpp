@@ -149,9 +149,6 @@ void GameState::updateFallSpeed(float delta) {
 void GameState::rotateView(int direction) {
 
     facedDirection = Direction((facedDirection + 4 + direction) % 4); // -1 % 4 returns -1 in cpp so add a 4
-
-    //TAMAMEN YANLIÞ KÜPLERÝ DÖNDÜRMEMÝZ GEREKIYOR BAKIÞ ACISINI DEÐÝL
-
     targetAngle += direction * 90.0f;
     rotating = true; //enter rotating state
 }

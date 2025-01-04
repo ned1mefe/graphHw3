@@ -167,31 +167,53 @@ void GameState::rotateView(int direction) {
 }
 
 void GameState::checkLineCompletion() {
-    //std::map<float, std::vector<Block>> levelMap;
 
-    //// Group by y-level
-    //for (const auto& block : blocks) {
-    //    levelMap[block.y].push_back(block);
-    //}
+    float completedLine = -1.0f;
+    std::map<float, std::vector<Block>> levelMap;
 
-    //for (const auto& [level, levelBlocks] : levelMap) {
-    //    if (levelBlocks.size() == BOARD_SIZE * BOARD_SIZE) {
-    //        // Remove completed level
-    //        blocks.erase(
-    //            std::remove_if(blocks.begin(), blocks.end(),
-    //                [level](const Block& b) { return b.y == level; }
-    //            ),
-    //            blocks.end()
-    //        );
+    // Group by y-level
+    for (const auto& block : blocks) {
+        levelMap[block.y].push_back(block);
+    }
 
-    //        // Move blocks down
-    //        for (auto& block : blocks) {
-    //            if (block.y > level) {
-    //                block.y -= 1.0f;
-    //            }
-    //        }
+    for (auto it = levelMap.begin(); it != levelMap.end(); ++it) {
+        float y = it->first;  
+        const std::vector<Block>& blockList = it->second;
 
-    //        score += BOARD_SIZE * BOARD_SIZE;
-    //    }
-    //}
+        if (blockList.size() != BOARD_SIZE * BOARD_SIZE) // line not completed,
+            continue;
+
+        completedLine = y; //find the lowest completed line since they get compeleted 3 lines at a time;
+        break;
+    }
+
+    if (completedLine == -1.0f) return; 
+
+    for (auto it = levelMap.begin(); it != levelMap.end(); ++it) { //lowering the y coordinates of the above ones;
+        
+        if (it->first < completedLine + 3.0f)
+            continue;
+
+        std::vector<Block>& blockList = it->second;
+
+        for (Block& block : blockList)
+        {
+            block.y = round(block.y - 3.0f);
+        }    
+    }
+
+    levelMap[completedLine].clear();
+    levelMap[round(completedLine + 1.0f)].clear();
+    levelMap[round(completedLine + 2.0f)].clear();
+
+    blocks.clear();
+
+    for (auto it = levelMap.begin(); it != levelMap.end(); ++it) {
+        for (Block block : it->second)
+            blocks.push_back(block);
+    }
+
+    score += 3 * BOARD_SIZE * BOARD_SIZE;
+
+
 }

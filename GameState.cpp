@@ -31,7 +31,7 @@ void GameState::createNewBlock() {
     }
 
     activeBlock.clear();
-    fallSpeed = INITIAL_FALL_SPEED;
+    //fallSpeed = INITIAL_FALL_SPEED;
 
     for (int x = 3; x < 6; x++) {
         for (int y = 12; y < 15; y++) {

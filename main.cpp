@@ -677,6 +677,15 @@ void reshape(GLFWwindow* window, int w, int h)
     // always look toward (0, 0, 0)
 	viewingMatrix = glm::lookAt(eyePos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
+    glUseProgram(gProgram[2]);
+    GLint textProjectionLoc = glGetUniformLocation(gProgram[2], "projection");
+
+    if (textProjectionLoc != -1) 
+    {
+        glm::mat4 textProjection = glm::ortho(0.0f, static_cast<GLfloat>(gWidth), 0.0f, static_cast<GLfloat>(gHeight));
+        glUniformMatrix4fv(textProjectionLoc, 1, GL_FALSE, glm::value_ptr(textProjection));
+    }
+
     for (int i = 0; i < 2; ++i)
     {
         glUseProgram(gProgram[i]);

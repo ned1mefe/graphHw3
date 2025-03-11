@@ -404,14 +404,13 @@ void init()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
-    // polygon offset is used to prevent z-fighting between the cube and its borders
-    glPolygonOffset(0.5, 0.5);
+    // Adjust polygon offset values to prevent z-fighting
+    glPolygonOffset(1.0, 1.0);
     glEnable(GL_POLYGON_OFFSET_FILL);
 
     initShaders();
     initVBO();
     initFonts(gWidth, gHeight);
-
 }
 
 void drawCube(const glm::vec3& position)
@@ -452,6 +451,7 @@ void drawAllCubes()
 
 void drawAllOutlines()
 {
+    glDisable(GL_POLYGON_OFFSET_FILL); // Disable polygon offset for edges
     glUseProgram(gProgram[1]); // Use the cube shader program
 
     for (const auto& block : gameState.activeBlock) {
@@ -460,6 +460,7 @@ void drawAllOutlines()
     for (const auto& block : gameState.blocks) {
         drawOutline(glm::vec3(block.x, block.y, block.z));
     }
+    glEnable(GL_POLYGON_OFFSET_FILL); // Re-enable polygon offset for faces
 }
 
 void drawGround()
@@ -610,36 +611,43 @@ void display()
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    drawAllCubes();
-    drawGround();
-    drawAllOutlines();
+    if (gameState.gameOver) {
+        renderText("Game Over", gWidth / 2 - 100, gHeight / 2, 1.0, glm::vec3(1, 0, 0));
+        std::stringstream ss;
+        ss << "Points: " << std::setw(4) << std::setfill('0') << gameState.score;
+        renderText(ss.str(), gWidth / 2 - 100, gHeight / 2 - 50, 1.0, glm::vec3(1, 1, 0));
+    } else {
+        drawAllCubes();
+        drawGround();
+        drawAllOutlines();
 
-    string facedDirection;
-    std::stringstream ss;
-    ss << "Points: " << std::setw(4) << std::setfill('0') << gameState.score;
-    std::string points = ss.str();
+        string facedDirection;
+        std::stringstream ss;
+        ss << "Points: " << std::setw(4) << std::setfill('0') << gameState.score;
+        std::string points = ss.str();
 
-    switch (gameState.facedDirection)
-    {
-    case Front:
-        facedDirection = "Front";
-        break;
-    case Right:
-        facedDirection = "Right";
-        break;
-    case Back:
-        facedDirection = "Back";
-        break;
-    case Left:
-        facedDirection = "Left";
-        break;
-    default:
-        facedDirection = "";
-        break;
+        switch (gameState.facedDirection)
+        {
+        case Front:
+            facedDirection = "Front";
+            break;
+        case Right:
+            facedDirection = "Right";
+            break;
+        case Back:
+            facedDirection = "Back";
+            break;
+        case Left:
+            facedDirection = "Left";
+            break;
+        default:
+            facedDirection = "";
+            break;
+        }
+
+        renderText(facedDirection, 3, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
+        renderText(points, gWidth - 200, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
     }
-    
-    renderText(facedDirection, 3, gHeight - 30, 0.75, glm::vec3(1, 1, 0));
-    renderText(points, gWidth - 200, gHeight-30, 0.75, glm::vec3(1, 1, 0));
 
     GLenum error = glGetError();
     if (error != GL_NO_ERROR)
@@ -649,6 +657,7 @@ void display()
 
     assert(error == GL_NO_ERROR);
 }
+
 
 void reshape(GLFWwindow* window, int w, int h)
 {
@@ -667,6 +676,15 @@ void reshape(GLFWwindow* window, int w, int h)
 
     // always look toward (0, 0, 0)
 	viewingMatrix = glm::lookAt(eyePos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+
+    glUseProgram(gProgram[2]);
+    GLint textProjectionLoc = glGetUniformLocation(gProgram[2], "projection");
+
+    if (textProjectionLoc != -1) 
+    {
+        glm::mat4 textProjection = glm::ortho(0.0f, static_cast<GLfloat>(gWidth), 0.0f, static_cast<GLfloat>(gHeight));
+        glUniformMatrix4fv(textProjectionLoc, 1, GL_FALSE, glm::value_ptr(textProjection));
+    }
 
     for (int i = 0; i < 2; ++i)
     {
